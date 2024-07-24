@@ -28,6 +28,5 @@ int main(int argc, char *argv[]) {
   printf("[debug] testing hashing functions...");
   printf("[hash] Hello=%lu\n", hash("hello"));
 
-  printf("Hello world!\n");
   return EXIT_SUCCESS;
 }
