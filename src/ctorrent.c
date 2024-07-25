@@ -7,15 +7,15 @@
 
 int main(int argc, char *argv[]) {
 
-  if (argc < 0) {
+  if (argc < 2) {
     printf("[usage] ctorrent --file {filepath}\n");
     return EXIT_FAILURE;
   }
 
-  uint8_t file = 0;
+  char file = 0;
   char *filename;
   while (*argv) {
-    if (strcmp(*argv++, "file") == 0) {
+    if (strcmp(*argv++, "--file") == 0) {
       file = 1;
       filename = *argv;
     }
