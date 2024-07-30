@@ -6,6 +6,13 @@
 
 #define INT_MAX_DIGITS 20
 
+#define LIST_DEFAULT_LEN 32
+
+/**
+ * Marks the end of any value in a bencoding element
+ */
+#define EOVAL 'e'
+
 /**
  * Hashmap values can be:
  *  - Another hashmap (dict)
@@ -13,12 +20,12 @@
  *  - A string
  *  - An integer
  */
-typedef enum HashmapType {
+typedef enum HashValueType {
     TYPE_DICT = 'd',
     TYPE_LIST = 'l', 
     TYPE_STRIING = 's',
     TYPE_INTEGER = 'i'
-} HashmapType;
+} HashValueType;
 
 /**
  * A node for a linked list.
@@ -26,7 +33,7 @@ typedef enum HashmapType {
  * HashmapType enum.
  */
 typedef struct Node {
-    HashmapType valueType;
+    HashValueType valueType;
     void* value;
     struct Node* next;
 } Node;
@@ -36,10 +43,10 @@ typedef struct Node {
  */
 typedef Node *Hashmap[DEFAULT_LEN];
 
-Node* new_node(void* value, HashmapType valueType, Node* next);
+Node* new_node(void* value, HashValueType valueType, Node* next);
 
 uint64_t hash(char *str);
-int8_t put(Hashmap *map, HashmapType valueType, void* value);
-int8_t update(Hashmap *map, HashmapType newValueType, void* newValue);
+int8_t put(Hashmap *map, HashValueType valueType, void* value);
+int8_t update(Hashmap *map, HashValueType newValueType, void* newValue);
 
 int32_t parse_hashmap(char* filepath, Hashmap* torrent_hashmap);
