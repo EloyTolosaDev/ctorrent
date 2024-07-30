@@ -18,8 +18,8 @@ typedef struct TorrentInfoModeSingle {
 } TorrentInfoModeSingle;
 
 typedef union TorrentInfoSpec  {
-    torrent_info_single_file_t single_file;
-    torrent_info_multiple_file_t multiple_file;
+    TorrentInfoModeSingle single_file_torrent;
+    TorrentInfoModeMultiple multiple_file_torrent;
 } TorrentInfoSpec;
 
 typedef enum TorrentInfoMode {
@@ -29,13 +29,12 @@ typedef enum TorrentInfoMode {
 typedef struct TorrentInfoCommon {
     uint32_t piece_length;
     uint32_t pieces;
-    char private;               /** OPTIONAL. This is a boolean field! */
-    enum torrent_type type;     /** Discriminate which type of torrent it is */
-    union torrent_info_files files;
+    uint8_t private;            /** OPTIONAL: This is a boolean field! */
 } TorrentInfoCommon;
 
 typedef struct TorrentInfo {
     TorrentInfoCommon common;
+    TorrentInfoMode torrent_mode;
     TorrentInfoSpec spec;
 } TorrentInfo;
 

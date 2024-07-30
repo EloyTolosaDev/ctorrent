@@ -39,7 +39,7 @@ typedef Node *Hashmap[DEFAULT_LEN];
 Node* new_node(void* value, HashmapType valueType, Node* next);
 
 uint64_t hash(char *str);
-int8_t put(hashmap *map, char *value);
-int8_t update(hashmap *map, char *newvalue);
+int8_t put(Hashmap *map, HashmapType valueType, void* value);
+int8_t update(Hashmap *map, HashmapType newValueType, void* newValue);
 
-int32_t parse_hashmap(char* filepath, hashmap* torrent_hashmap);
+int32_t parse_hashmap(char* filepath, Hashmap* torrent_hashmap);

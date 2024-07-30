@@ -60,7 +60,7 @@ void* __read_value(FILE* file, HashmapType type) {
   return NULL;
 }
 
-int32_t parse_hashmap(char* filepath, hashmap* torrent_hashmap) {
+int32_t parse_hashmap(char* filepath, Hashmap* torrent_hashmap) {
     FILE* file = fopen(filepath, "r");
     if (file == NULL) {
         fprintf(stderr, "[parse_hashmap] error reading %s: %s\n", filepath, strerror(errno));
