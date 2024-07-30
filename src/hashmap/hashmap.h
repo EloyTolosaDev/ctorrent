@@ -4,6 +4,8 @@
 
 #define ERRBADFORMAT 1
 
+#define INT_MAX_DIGITS 20
+
 /**
  * Hashmap values can be:
  *  - Another hashmap (dict)
@@ -11,7 +13,7 @@
  *  - A string
  *  - An integer
  */
-typedef enum hashmap_type {
+typedef enum HashmapType {
     TYPE_DICT = 'd',
     TYPE_LIST = 'l', 
     TYPE_STRIING = 's',
@@ -19,17 +21,22 @@ typedef enum hashmap_type {
 } HashmapType;
 
 /**
- * A hashmap has to behave like a linked list in case of collisions
+ * A node for a linked list.
+ * The value of the linked list can be one of the mentioned in the
+ * HashmapType enum.
  */
-struct node {
-    char* value;
-    struct node* next;
-};
-typedef struct node node_t;
+typedef struct Node {
+    HashmapType valueType;
+    void* value;
+    struct Node* next;
+} Node;
 
-typedef node_t *hashmap[DEFAULT_LEN];
+/**
+ * A hashmap is an array of linked lists, just as the typical definition.
+ */
+typedef Node *Hashmap[DEFAULT_LEN];
 
-node_t* new_node(char* value, struct node* next);
+Node* new_node(void* value, HashmapType valueType, Node* next);
 
 uint64_t hash(char *str);
 int8_t put(hashmap *map, char *value);

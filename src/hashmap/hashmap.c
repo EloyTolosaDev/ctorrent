@@ -15,17 +15,13 @@ uint64_t hash(char *str) {
   return v;
 }
 
-node_t* new_node(char* value, struct node* next) {
-  node_t* n = malloc(sizeof(node_t));
+Node* new_node(void* value, HashmapType valueType, Node* next) {
+  Node* n = malloc(sizeof(Node));
+  n->valueType = valueType;
   n->value = value;
   n->next = next;
   return n;
 }
-
-/**
- * NOTE: Move to header file
- * */
-#define INT_MAX_DIGITS 20
 
 /**
  * Reads the next key in the dictionary file

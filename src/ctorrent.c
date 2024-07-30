@@ -1,4 +1,4 @@
-//#include "hashmap/hashmap.h"
+#include "hashmap/hashmap.h"
 #include "bencoding/bencoding.h"
 
 #include <stdint.h>
@@ -32,10 +32,8 @@ int main(int argc, char *argv[]) {
     return EXIT_FAILURE;
   }
 
-  hashmap map;
+  Hashmap map;
   parse_hashmap(filename, &map);
-  
-  
 
   return EXIT_SUCCESS;
 }
