@@ -1,4 +1,5 @@
-#include "hashmap/hashmap.h"
+//#include "hashmap/hashmap.h"
+#include "bencoding/bencoding.h"
 
 #include <stdint.h>
 #include <stdio.h>
@@ -21,12 +22,20 @@ int main(int argc, char *argv[]) {
     }
   }
 
-  if (file) {
-    printf("File to process is %s\n", filename);
+  if (!file) {
+    fprintf(stderr, "[ctorrent] required flag --file not provided");
+    return EXIT_FAILURE;
   }
 
-  printf("[debug] testing hashing functions...");
-  printf("[hash] Hello=%lu\n", hash("hello"));
+  if (filename == NULL) {
+    fprintf(stderr, "[ctorrent] --file flag provided with no value");
+    return EXIT_FAILURE;
+  }
+
+  hashmap map;
+  parse_hashmap(filename, &map);
+  
+  
 
   return EXIT_SUCCESS;
 }

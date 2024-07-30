@@ -45,10 +45,4 @@ typedef struct torrent {
     char* encoding;
 } torrent_t;
 
-#define dict 'd'
-#define list 'l'
-#define int 'i'
-#define end 'e'
-
 int32_t parse_torrent(char *filepath, torrent_t *torrent_file);
-int32_t parse_hashmap(char* filepath, hashmap* torrent_hashmap);
