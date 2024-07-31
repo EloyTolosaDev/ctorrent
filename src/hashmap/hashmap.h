@@ -1,6 +1,6 @@
 #include <stdint.h>
 
-#define DEFAULT_LEN 512
+#define DEFAULT_DICT_LEN 512
 
 #define ERRBADFORMAT 1
 
@@ -23,7 +23,7 @@
 typedef enum HashValueType {
     TYPE_DICT = 'd',
     TYPE_LIST = 'l', 
-    TYPE_STRIING = 's',
+    TYPE_STRING = 's',
     TYPE_INTEGER = 'i'
 } HashValueType;
 
@@ -41,12 +41,12 @@ typedef struct Node {
 /**
  * A hashmap is an array of linked lists, just as the typical definition.
  */
-typedef Node *Hashmap[DEFAULT_LEN];
+typedef Node *Hashmap[DEFAULT_DICT_LEN];
 
 Node* new_node(void* value, HashValueType valueType, Node* next);
 
 uint64_t hash(char *str);
-int8_t put(Hashmap *map, HashValueType valueType, void* value);
-int8_t update(Hashmap *map, HashValueType newValueType, void* newValue);
+void put(Hashmap map, char* key, HashValueType valueType, void* value);
+int8_t update(Hashmap map, HashValueType newValueType, void* newValue);
 
-int32_t parse_hashmap(char* filepath, Hashmap* torrent_hashmap);
+uint8_t parse_hashmap(char* filepath, Hashmap* hashmap);

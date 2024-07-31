@@ -23,17 +23,19 @@ int main(int argc, char *argv[]) {
   }
 
   if (!file) {
-    fprintf(stderr, "[ctorrent] required flag --file not provided");
+    fprintf(stderr, "[ctorrent] required flag --file not provided\n");
     return EXIT_FAILURE;
   }
 
   if (filename == NULL) {
-    fprintf(stderr, "[ctorrent] --file flag provided with no value");
+    fprintf(stderr, "[ctorrent] --file flag provided with no value\n");
     return EXIT_FAILURE;
   }
 
-  Hashmap map;
-  parse_hashmap(filename, &map);
+  Hashmap* map;
+  parse_hashmap(filename, map);
+
+  
 
   return EXIT_SUCCESS;
 }
