@@ -1,5 +1,5 @@
 CC = gcc
-CFLAGS = -Wall # ...
+CFLAGS = -Wall -Wno-maybe-uninitialized # ...
 
 SRCDIR = ./src
 BUILDDIR = ./build
