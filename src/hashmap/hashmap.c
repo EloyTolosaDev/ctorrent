@@ -12,7 +12,15 @@
  */
 Hashmap* __read_dict(FILE* file);
 void** __read_list(FILE* file);
+char* __to_string(void* value, HashValueType type);
 
+
+Hashmap* new_hashmap() {
+  Hashmap* map = malloc(sizeof(Hashmap));
+  for (int i = 0; i < DEFAULT_DICT_LEN; i++)
+    map->arr[i] = NULL;
+  return map;
+}
 
 uint64_t hash(char *str) {
   uint64_t v = 0;
@@ -23,10 +31,49 @@ uint64_t hash(char *str) {
   return v;
 }
 
-void put(Hashmap map, char* key, HashValueType valueType, void* value) {
+char* __to_string(void* value, HashValueType type) {
+  char* val;
+  switch (type) {
+    case TYPE_STRING:
+      val = (char*) value;
+      break;
+    case TYPE_INTEGER:
+      val = malloc(sizeof(char)*INT_MAX_DIGITS);
+      sprintf(val, "%ld", *((int64_t*) value));
+      break;
+    case TYPE_LIST:
+      val = "[to be implemented] a list";
+      break;
+    case TYPE_DICT:
+      val = "[to be implemented] a dict";
+      break;
+    /** 
+     * TODO: Implement DICTS later. It has to be recursive
+     */
+  }
+  return val;
+}
+
+void put(Hashmap* map, char* key, HashValueType valueType, void* value) {
   Node* n = new_node(value, valueType, NULL);
   uint64_t key_hash = hash(key) % DEFAULT_DICT_LEN;
-  map[key_hash] = n;
+  fprintf(stdout, "[put] Putting {%s: %s} into the hashnmap at [%ld]\n", key, __to_string(value, valueType), key_hash);
+  
+  /**
+   * Check for collisions.
+   * In case of collisions, add the node at the end of the list.
+   */
+  if (map->arr[key_hash] == NULL) {
+    map->arr[key_hash] = n;
+  } else {
+    Node* iter = map->arr[key_hash];
+    fprintf(stdout, "[put] collission in key %s at position %ld\n", key, key_hash);
+    fprintf(stdout, "[put] Value of node of the collision: *(%p)->{%d, %p, %p}\n", (void*) iter, iter->valueType, iter->value, iter->next);
+    while (iter->next != NULL)
+      iter = iter->next;
+
+    iter->next = n;
+  }
 }
 
 Node* new_node(void* value, HashValueType valueType, Node* next) {
@@ -60,19 +107,18 @@ char* __read_key(FILE* file) {
     /**
      * Read up to 'strlen' characters
      */
-    int strlen = atoi(len);
-    char* ret = malloc(sizeof(char) * strlen + 1);
+    int str_len = atoi(len);
 
-    /**
-     * ERROR: See this link
-     * https://stackoverflow.com/a/9389745
-     */
-    size_t bytes = fread(ret, sizeof(char), strlen, file);
-    if (bytes <= 0) {
-        fprintf(stderr, "\t[__read_key] %ld bytes read using fread\n", bytes);
+    size_t bytes_to_read = sizeof(char) * str_len;
+    char* ret = malloc(bytes_to_read + 1);
+
+    size_t bytes = fread(ret, sizeof(char), str_len, file);
+    if (bytes < bytes_to_read) {
+        fprintf(stderr, "\t[__read_key] an error occurred during fread: %d\n", errno);
         return NULL;
     }
-    ret[strlen+1] = '\0';
+
+    ret[str_len+1] = '\0';
 
     return ret;
 }
@@ -109,25 +155,35 @@ int64_t __read_int(FILE* file) {
 }
 
 Hashmap* __read_dict(FILE* file) {
+
   char c = 0;
   char* key = NULL;
   char* strval = NULL;
   void** list;
   int64_t ival = 0;
-  Hashmap map;
-  while ( (c = fgetc(file)) ) {
+
+  Hashmap* map = new_hashmap();
+  Hashmap* new = new_hashmap();
+
+  while ( (c = fgetc(file)) != EOVAL ) {
       switch (c) {
       case TYPE_DICT:
+
+          new = __read_dict(file);
+
+          put(map, key, TYPE_DICT, new);
+
           key = NULL;
         break;
       case TYPE_LIST:
 
-          fprintf(stdout, "[__read_dict] reading the list '%s'\n", key);
           list = __read_list(file);
           if (list == NULL) {
-            fprintf(stderr, "[parse_hashmap] Error reading a list from the file\n");
+            fprintf(stderr, "[__read_dict] Error reading a list from the file\n");
             return NULL;
           }
+
+          put(map, key, TYPE_LIST, list);
 
           key = NULL;
         break;
@@ -140,7 +196,11 @@ Hashmap* __read_dict(FILE* file) {
             return NULL;
           }
 
-          fprintf(stdout, "Correctly read %ld into the dict\n", ival);
+          /**
+           * Once we read the int, we put it into the dict
+           */
+          put(map, key, TYPE_INTEGER, &ival);
+
           key = NULL;
         break;
       
@@ -186,10 +246,8 @@ Hashmap* __read_dict(FILE* file) {
          * Otherwise it means that we read a key and we have to read the value,
          * which is not a string.
          */
-        if (!strval) {
-          fprintf(stderr, "[__read_dict] not a strval for key %s\n", key);
+        if (!strval)
           continue;
-        }
 
         /**
          * NOTE: This is not fucking necessary
@@ -199,17 +257,23 @@ Hashmap* __read_dict(FILE* file) {
           continue;
         }
 
-        fprintf(stdout, "[__read_dict] Putting {%s: %s} into the hashnmap\n", key, strval);
         put(map, key, TYPE_STRING, strval);
         key = NULL, strval = NULL;
 
         break;
       }
   }
-  return NULL;
+
+  if (c == EOF) {
+    return map;
+  } else {
+    return NULL;
+  }
+  
 }
 
 void** __read_list(FILE* file) {
+
   void** list = malloc(LIST_DEFAULT_LEN * sizeof(void*));
   void** newlist;
   char* key;
@@ -236,12 +300,10 @@ void** __read_list(FILE* file) {
 
     switch (c) {
       case TYPE_LIST:
-          fprintf(stdout, "\t[__read_list] reading a list\n");
           list[nelements++] = __read_list(file);
         break;
       
       case TYPE_DICT:
-          fprintf(stdout, "\t[__read_list] reading a list\n");
           list[nelements++] = __read_dict(file);
         break;
 
@@ -252,7 +314,6 @@ void** __read_list(FILE* file) {
           }
 
           key = __read_key(file);
-          fprintf(stdout, "\t[__read_list] read element %s into the list.\n", key);
 
           list[nelements++] = key;
         break;
@@ -260,13 +321,10 @@ void** __read_list(FILE* file) {
     
   }
 
-  fprintf(stdout, "\t[__read_list] Finish reading the list\n");
   return list;
 }
 
-
-
-uint8_t parse_hashmap(char* filepath, Hashmap* hashmap) {
+uint8_t parse_hashmap(char* filepath, Hashmap *hashmap) {
     FILE* file = fopen(filepath, "r");
     if (file == NULL) {
         fprintf(stderr, "[parse_hashmap] error reading %s: %s\n", filepath, strerror(errno));

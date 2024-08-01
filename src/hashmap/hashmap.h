@@ -41,12 +41,15 @@ typedef struct Node {
 /**
  * A hashmap is an array of linked lists, just as the typical definition.
  */
-typedef Node *Hashmap[DEFAULT_DICT_LEN];
+typedef struct Hashmap {
+    Node* arr[DEFAULT_DICT_LEN];
+} Hashmap;
 
 Node* new_node(void* value, HashValueType valueType, Node* next);
+Hashmap* new_hashmap();
 
 uint64_t hash(char *str);
-void put(Hashmap map, char* key, HashValueType valueType, void* value);
+void put(Hashmap* map, char* key, HashValueType valueType, void* value);
 int8_t update(Hashmap map, HashValueType newValueType, void* newValue);
 
-uint8_t parse_hashmap(char* filepath, Hashmap* hashmap);
+uint8_t parse_hashmap(char* filepath, Hashmap *hashmap);

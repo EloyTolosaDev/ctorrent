@@ -32,10 +32,8 @@ int main(int argc, char *argv[]) {
     return EXIT_FAILURE;
   }
 
-  Hashmap* map;
-  parse_hashmap(filename, map);
-
-  
+  Hashmap* map = new_hashmap();
+  parse_hashmap(filename, map);  
 
   return EXIT_SUCCESS;
 }

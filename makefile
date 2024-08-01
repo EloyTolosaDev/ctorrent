@@ -1,5 +1,5 @@
 CC = gcc
-CFLAGS = -Wall -Wno-maybe-uninitialized # ...
+CFLAGS = -Wall -Wno-maybe-uninitialized -Wno-return-local-addr # ...
 
 SRCDIR = ./src
 BUILDDIR = ./build
