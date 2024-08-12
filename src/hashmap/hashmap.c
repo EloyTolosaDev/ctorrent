@@ -1,17 +1,11 @@
 #include "hashmap.h"
 
-#include <stdlib.h>
-#include <errno.h>
-#include <stdio.h>
-#include <string.h>
-#include <ctype.h>
+#define STR_EQ(s1, s2) strcmp(s1, s2) == 0
 
-/**
- * To avoid warnings of "implicit declaration".
- * We will avoid them manually in the future.
- */
 Hashmap* __read_dict(FILE* file);
+int64_t* __read_int(FILE* file);
 void** __read_list(FILE* file);
+
 char* __to_string(void* value, HashValueType type);
 
 
@@ -39,7 +33,7 @@ char* __to_string(void* value, HashValueType type) {
       break;
     case TYPE_INTEGER:
       val = malloc(sizeof(char)*INT_MAX_DIGITS);
-      sprintf(val, "%ld", *((int64_t*) value));
+      sprintf(val, "%p", (uint64_t*) value);
       break;
     case TYPE_LIST:
       val = "[to be implemented] a list";
@@ -57,8 +51,7 @@ char* __to_string(void* value, HashValueType type) {
 void put(Hashmap* map, char* key, HashValueType valueType, void* value) {
   Node* n = new_node(value, valueType, NULL);
   uint64_t key_hash = hash(key) % DEFAULT_DICT_LEN;
-  fprintf(stdout, "[put] Putting {%s: %s} into the hashnmap at [%ld]\n", key, __to_string(value, valueType), key_hash);
-  
+  fprintf(stdout, "[put] Putting {%s: %s} into the hashnmap at [%ld]\n", key, __to_string(n->value, n->valueType), key_hash);
   /**
    * Check for collisions.
    * In case of collisions, add the node at the end of the list.
@@ -67,8 +60,6 @@ void put(Hashmap* map, char* key, HashValueType valueType, void* value) {
     map->arr[key_hash] = n;
   } else {
     Node* iter = map->arr[key_hash];
-    fprintf(stdout, "[put] collission in key %s at position %ld\n", key, key_hash);
-    fprintf(stdout, "[put] Value of node of the collision: *(%p)->{%d, %p, %p}\n", (void*) iter, iter->valueType, iter->value, iter->next);
     while (iter->next != NULL)
       iter = iter->next;
 
@@ -76,8 +67,20 @@ void put(Hashmap* map, char* key, HashValueType valueType, void* value) {
   }
 }
 
+/**
+ * The caller of this function must check for nu
+ */
+Node* get(Hashmap* map, char* key) {
+  return map->arr[hash(key)%DEFAULT_DICT_LEN];
+}
+
 Node* new_node(void* value, HashValueType valueType, Node* next) {
   Node* n = malloc(sizeof(Node));
+  if (!n) {
+    fprintf(stderr, "[new_node] error allocating memory for Node*\n");
+    return NULL;
+  }
+
   n->valueType = valueType;
   n->value = value;
   n->next = next;
@@ -89,6 +92,7 @@ Node* new_node(void* value, HashValueType valueType, Node* next) {
  * NOTE: Maybe change the name to "read_str" or "read_value"
  */
 char* __read_key(FILE* file) {
+    
     char len[INT_MAX_DIGITS];
     uint8_t num_digits = 0;
     char c = 0;
@@ -112,18 +116,14 @@ char* __read_key(FILE* file) {
     size_t bytes_to_read = sizeof(char) * str_len;
     char* ret = malloc(bytes_to_read + 1);
 
-    size_t bytes = fread(ret, sizeof(char), str_len, file);
-    if (bytes < bytes_to_read) {
-        fprintf(stderr, "\t[__read_key] an error occurred during fread: %d\n", errno);
-        return NULL;
-    }
+    fread(ret, sizeof(char), str_len, file);
 
-    ret[str_len+1] = '\0';
+    ret[bytes_to_read] = '\0';
 
     return ret;
 }
 
-int64_t __read_int(FILE* file) {
+int64_t* __read_int(FILE* file) {
   char len[INT_MAX_DIGITS];
   uint8_t num_digits = 0;
   char c = 0;
@@ -144,14 +144,16 @@ int64_t __read_int(FILE* file) {
    */
   if (c != EOVAL) {
     fprintf(stderr, "[__read_int] Bad file format: integer not closed with terminating 'e' character");
-    return -1;
+    return NULL;
   }
   len[num_digits] = '\0';
 
   /**
    * Read up to 'strlen' characters
    */
-  return (int64_t) atoi(len);
+  int64_t* ret = malloc(sizeof(int64_t));
+  *ret = atol(len);
+  return ret;
 }
 
 Hashmap* __read_dict(FILE* file) {
@@ -160,12 +162,13 @@ Hashmap* __read_dict(FILE* file) {
   char* key = NULL;
   char* strval = NULL;
   void** list;
-  int64_t ival = 0;
+  int64_t* ival;
 
   Hashmap* map = new_hashmap();
   Hashmap* new = new_hashmap();
 
-  while ( (c = fgetc(file)) != EOVAL ) {
+  c = fgetc(file);
+  while ( c != EOVAL && c != EOF ) {
       switch (c) {
       case TYPE_DICT:
 
@@ -191,10 +194,12 @@ Hashmap* __read_dict(FILE* file) {
       case TYPE_INTEGER:
 
           ival = __read_int(file);
-          if (ival < 0) {
-            fprintf(stderr, "[__read_dict] Error reading int from file");
+          if (ival == NULL) {
+            fprintf(stderr, "[__read_dict] Error reading int from file for key %s\n", key);
             return NULL;
           }
+
+          fprintf(stdout, "Value of ival: %p\n", &ival);
 
           /**
            * Once we read the int, we put it into the dict
@@ -229,13 +234,13 @@ Hashmap* __read_dict(FILE* file) {
          */
         if (key == NULL) {
           key = __read_key(file);
-          if (!key) {
+          if (key == NULL) {
             fprintf(stderr, "[__read_dict] Error reading key\n");
             return NULL;
           }
         } else {
           strval = __read_key(file);
-          if (!strval) {
+          if (strval == NULL) {
             fprintf(stderr, "[__read_dict] Error reading key\n");
             return NULL;
           }
@@ -247,36 +252,29 @@ Hashmap* __read_dict(FILE* file) {
          * which is not a string.
          */
         if (!strval)
-          continue;
-
-        /**
-         * NOTE: This is not fucking necessary
-         */
-        if (!key) {
-          fprintf(stderr, "[__read_dict] not a key\n");
-          continue;
-        }
+          break;
 
         put(map, key, TYPE_STRING, strval);
         key = NULL, strval = NULL;
 
         break;
       }
+
+      c = fgetc(file);
   }
 
   if (c == EOF) {
-    return map;
-  } else {
+    fprintf(stderr, "[__read_dict] error reading dict: EOF reached before corresponding EOVAL");
     return NULL;
-  }
-  
+  } 
+
+  return map;
 }
 
 void** __read_list(FILE* file) {
 
   void** list = malloc(LIST_DEFAULT_LEN * sizeof(void*));
   void** newlist;
-  char* key;
   char c;
   int nelements = 0;
   int maxelements = LIST_DEFAULT_LEN;
@@ -307,15 +305,17 @@ void** __read_list(FILE* file) {
           list[nelements++] = __read_dict(file);
         break;
 
+      case TYPE_INTEGER:
+          list[nelements++] = __read_int(file);
+        break;
+
       default:
           if (ungetc(c, file) == EOF) {
             fprintf(stderr, "\t[__read_list] error ungettinc char %c into file.\n", c);
             return NULL;
           }
 
-          key = __read_key(file);
-
-          list[nelements++] = key;
+          list[nelements++] = __read_key(file);
         break;
     }
     
@@ -325,7 +325,7 @@ void** __read_list(FILE* file) {
 }
 
 uint8_t parse_hashmap(char* filepath, Hashmap *hashmap) {
-    FILE* file = fopen(filepath, "r");
+    FILE* file = fopen(filepath, "rb");
     if (file == NULL) {
         fprintf(stderr, "[parse_hashmap] error reading %s: %s\n", filepath, strerror(errno));
         return EXIT_FAILURE;
@@ -339,7 +339,12 @@ uint8_t parse_hashmap(char* filepath, Hashmap *hashmap) {
         return EXIT_FAILURE;
     }
 
-    hashmap = __read_dict(file);
+    // ungetc()
+    *hashmap = *__read_dict(file);
+    if (!hashmap) {
+      fprintf(stderr, "[parse_hashmap] error reading dict: hashmap is null\n");
+      return EXIT_FAILURE;
+    }
 
     return EXIT_SUCCESS;
 }

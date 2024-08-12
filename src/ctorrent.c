@@ -33,7 +33,18 @@ int main(int argc, char *argv[]) {
   }
 
   Hashmap* map = new_hashmap();
-  parse_hashmap(filename, map);  
+  if (parse_hashmap(filename, map) == EXIT_FAILURE) {
+    fprintf(stderr, "[main] Error parsing hashmap.\n");
+    return EXIT_FAILURE;
+  }
+
+  Hashmap* info =  (Hashmap*) get(map, "info")->value;
+  fprintf(stdout, "Info hashmap: %p\n", info);
+  void** l = (void**) get(info, "file-duration")->value;
+  fprintf(stdout, "File duration list: %p\n", l);
+  int64_t* fd = (int64_t*) l[0];
+  fprintf(stdout, "File duration: %ld\n", *fd);
+  
 
   return EXIT_SUCCESS;
 }

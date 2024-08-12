@@ -1,4 +1,10 @@
 #include <stdint.h>
+#include <stdlib.h>
+#include <errno.h>
+#include <stdio.h>
+#include <string.h>
+#include <ctype.h>
+// #include <wchar.h>
 
 #define DEFAULT_DICT_LEN 512
 
@@ -47,9 +53,8 @@ typedef struct Hashmap {
 
 Node* new_node(void* value, HashValueType valueType, Node* next);
 Hashmap* new_hashmap();
-
 uint64_t hash(char *str);
 void put(Hashmap* map, char* key, HashValueType valueType, void* value);
 int8_t update(Hashmap map, HashValueType newValueType, void* newValue);
-
+Node* get(Hashmap* map, char* key);
 uint8_t parse_hashmap(char* filepath, Hashmap *hashmap);
